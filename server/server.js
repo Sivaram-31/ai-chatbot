@@ -1,21 +1,25 @@
+// 1️⃣ Load environment variables first
 require("dotenv").config();
+
+// 2️⃣ Read the API key from .env
+const API_KEY = process.env.OPENROUTER_API_KEY;
 
 const express = require("express");
 const cors = require("cors");
+const fetch = require("node-fetch"); // if using node <18
 
 const app = express();
-
 app.use(cors());
 app.use(express.json());
 
+// Test route
 app.get("/", (req, res) => {
   res.send("Backend is running ✅");
 });
 
+// Your chat API route
 app.post("/api/chat", async (req, res) => {
   try {
-    console.log("🔥 Request received:", req.body);
-
     const userMessage = req.body.message;
 
     const response = await fetch(
@@ -23,22 +27,14 @@ app.post("/api/chat", async (req, res) => {
       {
         method: "POST",
         headers: {
-          "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
+          "Authorization": `Bearer ${API_KEY}`,  // use the variable here
           "Content-Type": "application/json",
-          "HTTP-Referer": "http://localhost:3000",
-          "X-Title": "AI Chatbot"
         },
         body: JSON.stringify({
-          model: "openrouter/auto",   // ✅ AUTO FREE MODEL
+          model: "openrouter/auto",
           messages: [
-            {
-              role: "system",
-              content: "Give short, clear answers."
-            },
-            {
-              role: "user",
-              content: userMessage
-            }
+            { role: "system", content: "Give short, clear answers." },
+            { role: "user", content: userMessage }
           ]
         })
       }
@@ -46,13 +42,7 @@ app.post("/api/chat", async (req, res) => {
 
     const data = await response.json();
 
-    console.log("✅ AI RESPONSE:", data);
-
-    const reply =
-      data?.choices?.[0]?.message?.content ||
-      data?.error?.message ||
-      "No response from AI";
-
+    const reply = data?.choices?.[0]?.message?.content || "No response from AI";
     res.json({ reply });
 
   } catch (err) {
@@ -64,3 +54,4 @@ app.post("/api/chat", async (req, res) => {
 app.listen(5000, () =>
   console.log("Server running on http://localhost:5000")
 );
+
