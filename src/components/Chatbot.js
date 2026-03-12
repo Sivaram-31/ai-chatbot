@@ -75,7 +75,7 @@ function Chatbot() {
     setTyping(true);
 
     try {
-      const res = await fetch("http://localhost:5000/api/chat", {
+      const res = await fetch(" https://ai-chatbot-1-yovu.onrender.com", {
         method: "POST",
         headers: { "Content-Type":"application/json" },
         body: JSON.stringify({ message:text })
