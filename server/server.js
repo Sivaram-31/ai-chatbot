@@ -1,15 +1,15 @@
-// 1️⃣ Load environment variables first
-require("dotenv").config();
-
-// 2️⃣ Read the API key from .env
-const API_KEY = process.env.OPENROUTER_API_KEY;
-
+// server.js
+require("dotenv").config();           // Load .env at the very top
 const express = require("express");
 const cors = require("cors");
-const fetch = require("node-fetch"); // if using node <18
+
+// If Node < 18, install node-fetch: npm install node-fetch
+// Node >= 18 has fetch built-in
+const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
 
 const app = express();
-app.use(cors());
+
+app.use(cors());       // Allow cross-origin requests
 app.use(express.json());
 
 // Test route
@@ -17,21 +17,25 @@ app.get("/", (req, res) => {
   res.send("Backend is running ✅");
 });
 
-// Your chat API route
+// Chat endpoint
 app.post("/api/chat", async (req, res) => {
   try {
     const userMessage = req.body.message;
+
+    if (!process.env.OPENROUTER_API_KEY) {
+      return res.status(500).json({ reply: "API key is missing in server environment!" });
+    }
 
     const response = await fetch(
       "https://openrouter.ai/api/v1/chat/completions",
       {
         method: "POST",
         headers: {
-          "Authorization": `Bearer ${API_KEY}`,  // use the variable here
-          "Content-Type": "application/json",
+          "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
+          "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          model: "openrouter/auto",
+          model: "openrouter/auto",  // Free auto model
           messages: [
             { role: "system", content: "Give short, clear answers." },
             { role: "user", content: userMessage }
@@ -42,7 +46,13 @@ app.post("/api/chat", async (req, res) => {
 
     const data = await response.json();
 
-    const reply = data?.choices?.[0]?.message?.content || "No response from AI";
+    console.log("✅ AI RESPONSE:", data);
+
+    const reply =
+      data?.choices?.[0]?.message?.content ||
+      data?.error?.message ||
+      "No response from AI";
+
     res.json({ reply });
 
   } catch (err) {
@@ -53,5 +63,4 @@ app.post("/api/chat", async (req, res) => {
 
 app.listen(5000, () =>
   console.log("Server running on http://localhost:5000")
-);
-
+);;
